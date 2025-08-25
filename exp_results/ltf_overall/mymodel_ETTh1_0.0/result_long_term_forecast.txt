@@ -1,0 +1,6 @@
+long_term_forecast_ETTh1_96_96_mymodel_ETTh1_ftM_sl96_ll48_pl96_dm128_nh8_el2_dl1_df128_fc3_ebtimeF_dtTrue_ax1.0_rl0.0_axlMAE_mf1_LTFAll_0
+mse:0.3875221312046051, mae:0.4036168158054352
+
+——————————STAR 代替iTransformer的full attention模块——————————————long_term_forecast_ETTh1_96_96_mymodel_ETTh1_ftM_sl96_ll48_pl96_dm128_nh8_el2_dl1_df128_fc3_ebtimeF_dtTrue_ax1.0_rl0.0_axlMAE_mf1_LTFAll_0
+mse:0.38365551829338074, mae:0.3998169004917145
+

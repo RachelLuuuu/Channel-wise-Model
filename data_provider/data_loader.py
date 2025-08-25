@@ -39,6 +39,7 @@ class Dataset_ETT_hour(Dataset):
         type_map = {'train': 0, 'val': 1, 'test': 2}
         self.set_type = type_map[flag]
 
+        #将参数保存为成员变量，方便其他方法调用
         self.features = features
         self.target = target
         self.scale = scale
@@ -141,24 +142,32 @@ class Dataset_ETT_hour_Trend(Dataset):
         self.__read_data__()
 
     def __read_data__(self):
-        self.scaler = StandardScaler()
+        self.scaler = StandardScaler()  #创建一个标准化工具，用于后续数据归一化
         df_raw = pd.read_csv(os.path.join(self.root_path, self.data_path))
 
+        #训练、验证、测试集切分边界
+        #一年有12个月，每个月30天，一天有24小时，一共有12*30*24=8640个小时
         border1s = [0, 12 * 30 * 24 - self.seq_len, 12 * 30 * 24 + 4 * 30 * 24 - self.seq_len]
         border2s = [12 * 30 * 24, 12 * 30 * 24 + 4 * 30 * 24, 12 * 30 * 24 + 8 * 30 * 24]
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
 
+        #特征选择
         if self.features == 'M' or self.features == 'MS':
-            cols_data = df_raw.columns[1:]
+            cols_data = df_raw.columns[1:]  #若是多变量，选取除第一列（日期）以外的所有特征
             df_data = df_raw[cols_data]
         elif self.features == 'S':
-            df_data = df_raw[[self.target]]
+            df_data = df_raw[[self.target]] #单变量的话，只选目标列（OT）
         
-        data_len = len(df_data)
-        trend = np.arange(data_len) * self.trend_k
-        df_data += trend[:, None]
 
+        #加趋势项，让模型学会拟合真实世界的趋势，提高对真实数据的预测能力
+        #让数据整体往上走or往下走，符合真实场景
+        #打印一下trend和加趋势前后的数据
+        data_len = len(df_data)
+        trend = np.arange(data_len) * self.trend_k  #得到线性递增的趋势序列
+        df_data += trend[:, None]   #[:, None]是把一维数组变成二维列向量，方便和数据对齐
+
+        #标准化数据
         if self.scale:
             train_data = df_data[border1s[0]:border2s[0]]
             self.scaler.fit(train_data.values)
@@ -166,6 +175,8 @@ class Dataset_ETT_hour_Trend(Dataset):
         else:
             data = df_data.values
 
+
+        #时间戳特征处理
         df_stamp = df_raw[['date']][border1:border2]
         df_stamp['date'] = pd.to_datetime(df_stamp.date)
         if self.timeenc == 0:

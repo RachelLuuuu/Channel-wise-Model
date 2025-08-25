@@ -96,7 +96,7 @@ class Model(nn.Module):
     def forecast(self, x_enc):
         # x: [Batch, Input length, Channel]
         B, T, N = x_enc.shape
-        # embedding x: [B, N, T, D]
+        # embedding x: [B, N, T, D] 
         x = self.tokenEmb(x_enc)
         bias = x
         # [B, N, T, D]

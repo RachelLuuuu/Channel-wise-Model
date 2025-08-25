@@ -20,7 +20,7 @@ class Model(nn.Module):
         self.enc_in = configs.enc_in
         self.seq_len = configs.seq_len
         self.pred_len = configs.pred_len
-        self.seg_len = 12
+        self.seg_len = 12   # segment length
         self.win_size = 2
         self.task_name = configs.task_name
 

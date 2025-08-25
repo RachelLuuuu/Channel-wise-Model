@@ -8,7 +8,7 @@ from models import (LSTM, MICN, TCN, Autoformer, Crossformer, DLinear,
                     ETSformer, FEDformer, FiLM, FreTS, Informer,
                     InviTransformer, Koopa, LightTS, Nonstationary_Transformer,
                     PatchTST, Pyraformer, Reformer, TiDE, TimesNet,
-                    Transformer, iFETransformer, iTransformer)
+                    Transformer, iFETransformer, iTransformer,mymodel)
 from utils.tools import ensure_path
 
 
@@ -38,7 +38,8 @@ class Exp_Basic(object):
             'TiDE': TiDE,
             'LSTM': LSTM,
             'TCN': TCN,
-            'FreTS': FreTS
+            'FreTS': FreTS,
+            'mymodel':mymodel
         }
         self.device = self._acquire_device()
         self.model = self._build_model().to(self.device)

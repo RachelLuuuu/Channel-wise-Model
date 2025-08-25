@@ -39,7 +39,7 @@ pl_list=(96 192 336 720)
 
 for lambda in ${lbd_list[@]}; do
     JOB_DIR=$OUTPUT_DIR/${model_name}_ETTh1_${lambda}
-    mkdir -p $JOB_DIR
+    mkdir -p $JOB_DIRscripts/fredf_exp/ltf_overall/ETTh1_script/mymodel.sh
 
     CHECKPOINTS=$JOB_DIR/checkpoints/
     RESULTS=$JOB_DIR/results/

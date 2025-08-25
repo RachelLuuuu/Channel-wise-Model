@@ -99,10 +99,12 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         return total_loss
 
     def train(self, setting):
+        #1 数据准备
         train_data, train_loader = self._get_data(flag='train')
         vali_data, vali_loader = self._get_data(flag='val')
         test_data, test_loader = self._get_data(flag='test')
 
+        #2 路径和日志准备
         path = os.path.join(self.args.checkpoints, setting)
         ensure_path(path)
         res_path = os.path.join(self.args.results, setting)
@@ -111,15 +113,17 @@ class Exp_Long_Term_Forecast(Exp_Basic):
 
         time_now = time.time()
 
-        train_steps = len(train_loader)
+        #3 训练准备（初始化早停机制、优化器、损失函数等）
+        train_steps = len(train_loader) #train_steps=264
         early_stopping = EarlyStopping(patience=self.args.patience, verbose=True)
 
         model_optim = self._select_optimizer()
         criterion = self._select_criterion()
 
-        if self.args.use_amp:
+        if self.args.use_amp:   #自动混合精度
             scaler = torch.cuda.amp.GradScaler()
 
+        #4 训练主循环
         for epoch in range(self.args.train_epochs):
             self.epoch = epoch + 1
             iter_count = 0
@@ -132,14 +136,14 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                 iter_count += 1
                 model_optim.zero_grad()
 
-                batch_x = batch_x.float().to(self.device)
-                batch_y = batch_y.float().to(self.device)
-                batch_x_mark = batch_x_mark.float().to(self.device)
+                batch_x = batch_x.float().to(self.device)   #(B,L,D)[32,96,7] batch_size=32, seq_len=96, features=7
+                batch_y = batch_y.float().to(self.device)   #size([32,144,7]) pred_len=144
+                batch_x_mark = batch_x_mark.float().to(self.device) #size([32,96,4])    4个时间特征
                 batch_y_mark = batch_y_mark.float().to(self.device)
 
-                # decoder input
-                dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
-                dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
+                # decoder input数据维度处理
+                dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float() #（batch_size, 倒数pred_len, features）（32，96，7） 
+                dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)  #（batch_size, label_len + pred_len, features）（32，96+144，7）
 
                 # encoder - decoder
                 if self.args.use_amp:
@@ -160,13 +164,15 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
                     else:
                         # outputs shape: [B, P, D]
-                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)  #(B,L,D)[32,96,7]
 
                     f_dim = -1 if self.args.features == 'MS' else 0
-                    outputs = outputs[:, -self.args.pred_len:, f_dim:]
+                    outputs = outputs[:, -self.args.pred_len:, f_dim:]  #取最后96步
                     batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
-
+                    '''训练目标：我们只关心最后 pred_len 步的预测结果（比如未来96小时），所以只取 outputs 的最后 pred_len 步。
+                    特征选择：有时只需要预测某个特征（比如温度），有时需要全部特征，所以用 f_dim 控制。'''
                     loss = 0
+
                     if self.args.rec_lambda:
                         loss_rec = criterion(outputs, batch_y)
                         
